@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Dispatch — Progress Report Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #ece7d8;
+    --paper-dark: #dcd5bd;
+    --paper-darker: #cdc4a6;
+    --card: #f4f1e6;
+    --ink: #21252b;
+    --ink-soft: #5b5f52;
+    --ink-faint: #8b8c78;
+    --stamp: #a33b2b;
+    --stamp-dark: #7e2c20;
+    --teal: #2e5e5a;
+    --teal-dark: #1f4441;
+    --rule: rgba(33,37,43,0.18);
+    --shadow: rgba(33,25,10,0.25);
+    --radius: 3px;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:
+      radial-gradient(ellipse at top left, rgba(255,255,255,0.4), transparent 60%),
+      var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Mono', monospace;
+    min-height:100vh;
+    padding: 28px 16px 60px;
+  }
+
+  a{ color: var(--teal-dark); }
+
+  .app{
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  /* ---------- Header ---------- */
+  .masthead{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    border-bottom: 3px solid var(--ink);
+    padding-bottom: 14px;
+    margin-bottom: 26px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .masthead-title{
+    font-family:'Special Elite', monospace;
+    font-size: clamp(28px, 4.5vw, 42px);
+    letter-spacing: 1px;
+    margin:0;
+  }
+  .masthead-title small{
+    display:block;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--ink-soft);
+    font-weight: 600;
+    margin-top: 4px;
+  }
+  .masthead-meta{
+    text-align:right;
+    font-size: 11px;
+    color: var(--ink-soft);
+    line-height: 1.7;
+  }
+  .masthead-meta .ref{
+    color: var(--ink);
+    font-weight:600;
+  }
+
+  /* ---------- Grid ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    align-items: start;
+  }
+  @media (max-width: 860px){
+    .grid{ grid-template-columns: 1fr; }
+  }
+
+  .card{
+    background: var(--card);
+    border: 1px solid var(--rule);
+    box-shadow: 0 3px 0 var(--paper-darker), 0 10px 24px -14px var(--shadow);
+    border-radius: var(--radius);
+    position: relative;
+  }
+  .card::before{
+    content:"";
+    position:absolute; inset:6px;
+    border: 1px dashed rgba(33,37,43,0.14);
+    pointer-events:none;
+    border-radius: 2px;
+  }
+
+  .card-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .card-head h2{
+    font-family:'Special Elite', monospace;
+    font-size: 16px;
+    letter-spacing: 1.5px;
+    margin:0;
+    text-transform: uppercase;
+  }
+  .card-head .tag{
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--ink-faint);
+    border: 1px solid var(--rule);
+    padding: 2px 7px;
+    border-radius: 20px;
+  }
+
+  .card-body{ padding: 18px 20px 22px; }
+
+  /* ---------- Form fields ---------- */
+  .field{ margin-bottom: 16px; }
+  .field label{
+    display:block;
+    font-size: 10.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .field input[type="text"],
+  .field input[type="date"],
+  .field select{
+    width:100%;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13.5px;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 2px;
+    padding: 9px 10px;
+  }
+  .field input:focus-visible, .field select:focus-visible, button:focus-visible, textarea:focus-visible{
+    outline: 2px solid var(--teal);
+    outline-offset: 1px;
+  }
+  .row-2{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  @media (max-width: 480px){ .row-2{ grid-template-columns: 1fr; } }
+
+  /* ---------- Task ledger rows ---------- */
+  .ledger-list{
+    border-top: 1px solid var(--rule);
+    margin-top: 4px;
+  }
+  .task-row{
+    display:grid;
+    grid-template-columns: 26px 1fr 28px;
+    gap: 8px;
+    align-items:center;
+    padding: 9px 0;
+    border-bottom: 1px dotted var(--rule);
+  }
+  .task-row .num{
+    font-family:'Special Elite', monospace;
+    font-size: 13px;
+    color: var(--ink-faint);
+    text-align:right;
+  }
+  .task-row input{
+    width:100%;
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 13px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid transparent;
+    padding: 6px 2px;
+    color: var(--ink);
+  }
+  .task-row input:hover{ border-bottom-color: var(--rule); }
+  .task-row input:focus-visible{
+    outline:none;
+    border-bottom: 1px solid var(--teal);
+  }
+  .task-row input::placeholder{ color: var(--ink-faint); }
+  .task-row .remove{
+    background:none;
+    border:none;
+    color: var(--ink-faint);
+    font-size: 16px;
+    cursor:pointer;
+    line-height:1;
+    padding: 4px;
+  }
+  .task-row .remove:hover{ color: var(--stamp); }
+
+  .add-row{
+    margin-top: 10px;
+    background:none;
+    border: 1px dashed var(--rule);
+    color: var(--ink-soft);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: .5px;
+    padding: 8px 12px;
+    border-radius: 2px;
+    cursor:pointer;
+    width:100%;
+  }
+  .add-row:hover{ border-color: var(--teal); color: var(--teal-dark); }
+
+  .generate-btn{
+    margin-top: 18px;
+    width:100%;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    font-family:'Special Elite', monospace;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 13px;
+    border-radius: 2px;
+    cursor:pointer;
+    transition: transform .08s ease;
+  }
+  .generate-btn:hover{ background: var(--teal-dark); }
+  .generate-btn:active{ transform: translateY(1px); }
+  .generate-btn:disabled{ opacity:.55; cursor:progress; }
+
+  /* ---------- Dispatch (report) panel ---------- */
+  .dispatch-body{ min-height: 320px; position:relative; }
+
+  .stamp-wrap{
+    position:absolute;
+    top: 10px;
+    right: 14px;
+    width: 84px;
+    height: 84px;
+    opacity: 0;
+    transform: scale(1.6) rotate(-18deg);
+    transition: opacity .25s ease, transform .35s cubic-bezier(.2,1.4,.4,1);
+    pointer-events:none;
+  }
+  .stamp-wrap.show{
+    opacity: .92;
+    transform: scale(1) rotate(-11deg);
+  }
+  .stamp-wrap svg{ width:100%; height:100%; display:block; }
+
+  .empty-state{
+    color: var(--ink-faint);
+    font-size: 13px;
+    line-height: 1.8;
+    padding: 30px 6px 10px;
+  }
+  .empty-state strong{ color: var(--ink-soft); }
+
+  .report-meta{
+    font-size: 11px;
+    color: var(--ink-soft);
+    letter-spacing: .5px;
+    margin-bottom: 10px;
+    padding-right: 90px;
+  }
+  .report-text{
+    font-family: 'Source Serif 4', serif;
+    font-size: 15.5px;
+    line-height: 1.75;
+    color: var(--ink);
+    white-space: pre-wrap;
+    min-height: 60px;
+  }
+  .report-text .cursor{
+    display:inline-block;
+    width: 8px;
+    background: var(--ink);
+    margin-left:2px;
+    animation: blink 0.9s steps(1) infinite;
+  }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  .loading-line{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    display:flex;
+    align-items:center;
+    gap: 8px;
+  }
+  .dots span{ animation: fade 1.2s infinite; opacity:0.2; }
+  .dots span:nth-child(2){ animation-delay:.2s; }
+  .dots span:nth-child(3){ animation-delay:.4s; }
+  @keyframes fade{ 0%,100%{opacity:.2;} 50%{opacity:1;} }
+
+  .fallback-note{
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--ink-faint);
+    border-top: 1px dotted var(--rule);
+    padding-top: 8px;
+  }
+
+  .dispatch-actions{
+    display:flex;
+    gap: 10px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+  }
+  .dispatch-actions button{
+    background: none;
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    letter-spacing: .5px;
+    padding: 8px 13px;
+    border-radius: 2px;
+    cursor:pointer;
+  }
+  .dispatch-actions button:hover{ border-color: var(--teal); color: var(--teal-dark); }
+  .dispatch-actions button:disabled{ opacity:.4; cursor:default; }
+
+  /* ---------- History strip ---------- */
+  .history{
+    margin-top: 28px;
+    border-top: 1px solid var(--ink);
+    padding-top: 14px;
+  }
+  .history h3{
+    font-family:'Special Elite', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0 0 10px;
+  }
+  .history-list{
+    display:flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .history-chip{
+    background: var(--paper-dark);
+    border: 1px solid var(--rule);
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 11.5px;
+    padding: 7px 11px;
+    border-radius: 20px;
+    cursor:pointer;
+    color: var(--ink-soft);
+  }
+  .history-chip:hover{ border-color: var(--teal); color: var(--teal-dark); }
+  .history-empty{ font-size: 12px; color: var(--ink-faint); }
+
+  @media (prefers-reduced-motion: reduce){
+    .stamp-wrap, .generate-btn, .dots span{ transition:none !important; animation:none !important; }
+    .cursor{ animation:none !important; opacity:0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="masthead">
+    <h1 class="masthead-title">Daily Dispatch<small>PROGRESS REPORT GENERATOR</small></h1>
+    <div class="masthead-meta">
+      FORM 12-D · LOG &amp; FILE<br>
+      <span class="ref">ENTRY NO. <span id="entryNo">001</span></span>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <!-- LEFT: Ledger / input -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Log Entry</h2>
+        <span class="tag" id="wordTag">draft</span>
+      </div>
+      <div class="card-body">
+
+        <div class="row-2">
+          <div class="field">
+            <label for="dateInput">Date</label>
+            <input type="date" id="dateInput">
+          </div>
+          <div class="field">
+            <label for="toneSelect">Tone</label>
+            <select id="toneSelect">
+              <option value="formal">Formal</option>
+              <option value="concise">Concise</option>
+              <option value="casual">Casual</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="recipientInput">Reporting to (optional)</label>
+          <input type="text" id="recipientInput" placeholder="e.g. project lead, myself, team channel">
+        </div>
+
+        <div class="field" style="margin-bottom:6px;">
+          <label>Tasks accomplished today</label>
+          <div class="ledger-list" id="ledgerList"></div>
+          <button class="add-row" id="addRow" type="button">+ add line</button>
+        </div>
+
+        <button class="generate-btn" id="generateBtn" type="button">File Report</button>
+      </div>
+    </section>
+
+    <!-- RIGHT: Dispatch / output -->
+    <section class="card">
+      <div class="card-head">
+        <h2>Dispatch</h2>
+        <span class="tag" id="statusTag">unfiled</span>
+      </div>
+      <div class="card-body dispatch-body">
+
+        <div class="stamp-wrap" id="stampWrap">
+          <svg viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="55" fill="none" stroke="var(--stamp)" stroke-width="3"/>
+            <circle cx="60" cy="60" r="46" fill="none" stroke="var(--stamp)" stroke-width="1.5"/>
+            <path id="stampArcTop" fill="none" d="M 18 60 A 42 42 0 0 1 102 60"/>
+            <text font-family="Special Elite, monospace" font-size="12" fill="var(--stamp)" letter-spacing="3">
+              <textPath href="#stampArcTop" startOffset="50%" text-anchor="middle">FILED &amp; LOGGED</textPath>
+            </text>
+            <text x="60" y="66" text-anchor="middle" font-family="Special Elite, monospace" font-size="15" fill="var(--stamp)" id="stampDate">--/--</text>
+            <path id="stampArcBottom" fill="none" d="M 22 78 A 40 40 0 0 0 98 78"/>
+            <text font-family="Special Elite, monospace" font-size="10" fill="var(--stamp)" letter-spacing="2">
+              <textPath href="#stampArcBottom" startOffset="50%" text-anchor="middle">DAILY DISPATCH</textPath>
+            </text>
+          </svg>
+        </div>
+
+        <div id="dispatchContent">
+          <div class="empty-state" id="emptyState">
+            No dispatch filed yet.<br>
+            <strong>Log today's tasks on the left</strong> and press "File Report" —
+            it'll be typed up here as a proper paragraph, ready to send or paste.
+          </div>
+        </div>
+
+        <div class="dispatch-actions" id="dispatchActions" style="display:none;">
+          <button id="copyBtn" type="button">Copy text</button>
+          <button id="downloadBtn" type="button">Download .txt</button>
+          <button id="editBtn" type="button">Edit &amp; refile</button>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <div class="history">
+    <h3>Filed dispatches</h3>
+    <div class="history-list" id="historyList">
+      <span class="history-empty">Nothing filed yet — your past reports will collect here.</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const STORAGE_PREFIX = 'entry:';
+
+  // ---------- utilities ----------
+  function todayISO(){
+    const d = new Date();
+    const off = d.getTimezoneOffset();
+    const local = new Date(d.getTime() - off*60000);
+    return local.toISOString().slice(0,10);
+  }
+  function formatDateHuman(iso){
+    if(!iso) return '';
+    const [y,m,d] = iso.split('-').map(Number);
+    const dt = new Date(y, m-1, d);
+    return dt.toLocaleDateString(undefined, {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  }
+  function formatStampDate(iso){
+    if(!iso) return '--/--';
+    const [y,m,d] = iso.split('-');
+    return m+'/'+d+'/'+y.slice(2);
+  }
+  function escapeHtml(s){
+    return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- state ----------
+  let tasks = [ {text:''}, {text:''} ];
+  let currentReport = '';
+  let entryCounter = 1;
+
+  const els = {
+    dateInput: document.getElementById('dateInput'),
+    toneSelect: document.getElementById('toneSelect'),
+    recipientInput: document.getElementById('recipientInput'),
+    ledgerList: document.getElementById('ledgerList'),
+    addRow: document.getElementById('addRow'),
+    generateBtn: document.getElementById('generateBtn'),
+    dispatchContent: document.getElementById('dispatchContent'),
+    dispatchActions: document.getElementById('dispatchActions'),
+    statusTag: document.getElementById('statusTag'),
+    wordTag: document.getElementById('wordTag'),
+    stampWrap: document.getElementById('stampWrap'),
+    stampDate: document.getElementById('stampDate'),
+    copyBtn: document.getElementById('copyBtn'),
+    downloadBtn: document.getElementById('downloadBtn'),
+    editBtn: document.getElementById('editBtn'),
+    historyList: document.getElementById('historyList'),
+    entryNo: document.getElementById('entryNo')
+  };
+
+  els.dateInput.value = todayISO();
+
+  // ---------- ledger rendering ----------
+  function renderLedger(){
+    els.ledgerList.innerHTML = '';
+    tasks.forEach((t, i) => {
+      const row = document.createElement('div');
+      row.className = 'task-row';
+      row.innerHTML = `
+        <span class="num">${String(i+1).padStart(2,'0')}</span>
+        <input type="text" data-idx="${i}" placeholder="What did you get done? e.g. Reviewed Q3 budget draft" value="${escapeHtml(t.text)}">
+        <button class="remove" type="button" data-idx="${i}" aria-label="Remove line ${i+1}" ${tasks.length<=1?'disabled style="opacity:.25;cursor:default;"':''}>&times;</button>
+      `;
+      els.ledgerList.appendChild(row);
+    });
+    els.ledgerList.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('input', e=>{
+        tasks[+e.target.dataset.idx].text = e.target.value;
+        updateWordTag();
+      });
+    });
+    els.ledgerList.querySelectorAll('.remove').forEach(btn=>{
+      btn.addEventListener('click', e=>{
+        const idx = +e.target.dataset.idx;
+        if(tasks.length > 1){
+          tasks.splice(idx,1);
+          renderLedger();
+          updateWordTag();
+        }
+      });
+    });
+  }
+
+  function updateWordTag(){
+    const filled = tasks.filter(t=>t.text.trim()).length;
+    els.wordTag.textContent = filled === 0 ? 'draft' : `${filled} logged`;
+  }
+
+  els.addRow.addEventListener('click', ()=>{
+    tasks.push({text:''});
+    renderLedger();
+    const inputs = els.ledgerList.querySelectorAll('input');
+    inputs[inputs.length-1].focus();
+  });
+
+  renderLedger();
+
+  // ---------- fallback local generator ----------
+  function buildFallbackParagraph(taskTexts, tone, dateHuman, recipient){
+    const openers = {
+      formal: `On ${dateHuman}, the following progress was made`,
+      concise: `${dateHuman} — progress summary`,
+      casual: `Here's what I got done on ${dateHuman}`
+    };
+    const connectors = ["First,", "In addition,", "I also", "Following that,", "Alongside this,", "Separately,", "Finally,"];
+    let sentences = [];
+    taskTexts.forEach((t, i) => {
+      let clean = t.trim();
+      clean = clean.charAt(0).toUpperCase() + clean.slice(1);
+      if(!/[.!?]$/.test(clean)) clean += '.';
+      if(i === 0){
+        sentences.push((tone==='casual' ? "I started by " : "The day began with ") + clean.charAt(0).toLowerCase()+clean.slice(1));
+      } else {
+        const c = connectors[Math.min(i, connectors.length-1)];
+        sentences.push(c + ' ' + clean.charAt(0).toLowerCase()+clean.slice(1));
+      }
+    });
+    let body = sentences.join(' ');
+    let closer = tone === 'formal'
+      ? ` Overall, the day's objectives were met and the work is on track to continue tomorrow.`
+      : tone === 'casual'
+      ? ` Good progress overall — picking back up tomorrow.`
+      : ` All items complete; continuing tomorrow.`;
+    let intro = openers[tone] + (recipient ? ` for ${recipient}` : '') + ': ';
+    return intro + body + closer;
+  }
+
+  // ---------- fixed introduction ----------
+  const INTRO_LINE = "Good Day, Sir! I'm Jaymark Mejia, a Junior Direct Sales Clerk Trainee.";
+
+  // ---------- AI generation via Anthropic API ----------
+  async function generateWithAI(taskTexts, tone, dateHuman, recipient){
+    const toneInstruction = {
+      formal: "Use a formal, professional register suitable for a corporate status report.",
+      concise: "Keep it tight and businesslike — short sentences, no filler, 2-4 sentences total.",
+      casual: "Use a relaxed, first-person, conversational register, like a quick update to a teammate."
+    }[tone];
+
+    const prompt = `Turn the following list of completed tasks into a single well-written progress report paragraph (not a list, not bullet points, no headers or markdown — plain prose only).
+
+Date: ${dateHuman}
+${recipient ? 'Audience: ' + recipient : ''}
+Style: ${toneInstruction}
+
+Tasks accomplished:
+${taskTexts.map(t => '- ' + t).join('\n')}
+
+Do not include any greeting or self-introduction — the report already opens with a fixed greeting line, so start directly with the summary of the day's work. Write only the finished paragraph. No preamble, no quotation marks, no markdown formatting.`;
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    if(!response.ok) throw new Error('API error ' + response.status);
+    const data = await response.json();
+    const textBlock = (data.content || []).find(b => b.type === 'text');
+    if(!textBlock || !textBlock.text) throw new Error('No text in response');
+    return textBlock.text.trim();
+  }
+
+  // ---------- typewriter reveal ----------
+  function typeOutReport(text){
+    const container = els.dispatchContent;
+    container.innerHTML = `
+      <div class="report-meta" id="reportMeta"></div>
+      <div class="report-text" id="reportText"><span class="cursor"></span></div>
+    `;
+    document.getElementById('reportMeta').textContent =
+      formatDateHuman(els.dateInput.value) + (els.recipientInput.value.trim() ? ' · for ' + els.recipientInput.value.trim() : '');
+
+    const target = document.getElementById('reportText');
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if(reduceMotion){
+      target.textContent = text;
+      return;
+    }
+
+    let i = 0;
+    const speed = Math.max(4, Math.min(18, Math.floor(1400 / text.length)));
+    function step(){
+      if(i <= text.length){
+        target.innerHTML = escapeHtml(text.slice(0,i)) + '<span class="cursor"></span>';
+        i += 2;
+        requestAnimationFrame(()=> setTimeout(step, speed));
+      } else {
+        target.innerHTML = escapeHtml(text);
+      }
+    }
+    step();
+  }
+
+  function fireStamp(){
+    els.stampDate.textContent = formatStampDate(els.dateInput.value);
+    els.stampWrap.classList.remove('show');
+    void els.stampWrap.offsetWidth;
+    els.stampWrap.classList.add('show');
+  }
+
+  // ---------- generate flow ----------
+  async function handleGenerate(){
+    const taskTexts = tasks.map(t=>t.text.trim()).filter(Boolean);
+    if(taskTexts.length === 0){
+      els.dispatchContent.innerHTML = `<div class="empty-state"><strong>Log at least one task first.</strong><br>Add what you got done today in the ledger on the left.</div>`;
+      return;
+    }
+
+    const dateISO = els.dateInput.value || todayISO();
+    const dateHuman = formatDateHuman(dateISO);
+    const tone = els.toneSelect.value;
+    const recipient = els.recipientInput.value.trim();
+
+    els.generateBtn.disabled = true;
+    els.statusTag.textContent = 'filing…';
+    els.dispatchActions.style.display = 'none';
+    els.stampWrap.classList.remove('show');
+    els.dispatchContent.innerHTML = `
+      <div class="loading-line">Typing up the dispatch<span class="dots"><span>.</span><span>.</span><span>.</span></span></div>
+    `;
+
+    let reportText;
+    let usedFallback = false;
+    try{
+      reportText = await generateWithAI(taskTexts, tone, dateHuman, recipient);
+    } catch(err){
+      usedFallback = true;
+      reportText = buildFallbackParagraph(taskTexts, tone, dateHuman, recipient);
+    }
+
+    reportText = INTRO_LINE + '\n\n' + reportText;
+
+    currentReport = reportText;
+    typeOutReport(reportText);
+    if(usedFallback){
+      const note = document.createElement('div');
+      note.className = 'fallback-note';
+      note.textContent = 'Filed with the offline template (AI service unavailable).';
+      els.dispatchContent.appendChild(note);
+    }
+    fireStamp();
+    els.statusTag.textContent = 'filed';
+    els.dispatchActions.style.display = 'flex';
+    els.generateBtn.disabled = false;
+
+    await saveEntry(dateISO, {
+      date: dateISO,
+      tasks: taskTexts,
+      tone, recipient,
+      report: reportText
+    });
+    await refreshHistory();
+  }
+
+  els.generateBtn.addEventListener('click', handleGenerate);
+
+  // ---------- actions ----------
+  els.copyBtn.addEventListener('click', async ()=>{
+    try{
+      await navigator.clipboard.writeText(currentReport);
+      els.copyBtn.textContent = 'Copied ✓';
+      setTimeout(()=> els.copyBtn.textContent = 'Copy text', 1400);
+    }catch(e){
+      els.copyBtn.textContent = 'Select & copy manually';
+    }
+  });
+
+  els.downloadBtn.addEventListener('click', ()=>{
+    const blob = new Blob([currentReport], {type:'text/plain'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dispatch-${els.dateInput.value || todayISO()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  });
+
+  els.editBtn.addEventListener('click', ()=>{
+    document.querySelector('.ledger-list input')?.focus();
+  });
+
+  // ---------- persistence ----------
+  async function saveEntry(dateISO, entry){
+    try{
+      await window.storage.set(STORAGE_PREFIX + dateISO, JSON.stringify(entry), false);
+    }catch(e){
+      console.error('Could not save entry', e);
+    }
+  }
+
+  async function loadEntry(dateISO){
+    try{
+      const res = await window.storage.get(STORAGE_PREFIX + dateISO, false);
+      if(!res) return null;
+      return JSON.parse(res.value);
+    }catch(e){
+      return null;
+    }
+  }
+
+  async function refreshHistory(){
+    try{
+      const res = await window.storage.list(STORAGE_PREFIX, false);
+      const keys = (res && res.keys) ? res.keys : [];
+      entryCounter = keys.length + 1;
+      els.entryNo.textContent = String(Math.max(1, entryCounter)).padStart(3,'0');
+
+      if(keys.length === 0){
+        els.historyList.innerHTML = `<span class="history-empty">Nothing filed yet — your past reports will collect here.</span>`;
+        return;
+      }
+      const dates = keys.map(k => k.replace(STORAGE_PREFIX, '')).sort().reverse().slice(0, 14);
+      els.historyList.innerHTML = '';
+      dates.forEach(d => {
+        const chip = document.createElement('button');
+        chip.className = 'history-chip';
+        chip.type = 'button';
+        chip.textContent = d === todayISO() ? `${d} (today)` : d;
+        chip.addEventListener('click', async ()=>{
+          const entry = await loadEntry(d);
+          if(!entry) return;
+          els.dateInput.value = entry.date;
+          els.toneSelect.value = entry.tone || 'formal';
+          els.recipientInput.value = entry.recipient || '';
+          tasks = entry.tasks.map(t => ({text:t}));
+          renderLedger();
+          updateWordTag();
+          currentReport = entry.report;
+          typeOutReport(entry.report);
+          fireStamp();
+          els.statusTag.textContent = 'filed';
+          els.dispatchActions.style.display = 'flex';
+        });
+        els.historyList.appendChild(chip);
+      });
+    }catch(e){
+      els.historyList.innerHTML = `<span class="history-empty">History unavailable right now.</span>`;
+    }
+  }
+
+  refreshHistory();
+})();
+</script>
+
+</body>
+</html>
