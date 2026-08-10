@@ -620,7 +620,7 @@
       <div class="card-body">
 
         <div class="apikey-banner" id="apikeyBanner">
-          <p><strong>No API key set</strong> — reports will use the offline template. <a href="https://console.anthropic.com/keys" target="_blank" rel="noopener">Get a key →</a></p>
+          <p><strong>No API key set</strong> — reports will use the offline template. <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get a key →</a></p>
           <button class="apikey-set-btn" id="apikeySetBtn" type="button">Set API Key</button>
         </div>
 
@@ -706,7 +706,7 @@
     <button class="modal-close" id="apikeyModalClose" type="button" aria-label="Close">×</button>
     <h3 id="modalTitle">Anthropic API Key</h3>
     <p>Paste your key below. It's stored only in your browser's localStorage — never sent anywhere except directly to Anthropic.<br>
-    <a href="https://console.anthropic.com/keys" target="_blank" rel="noopener">Get a key at console.anthropic.com →</a></p>
+    <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get a key at console.anthropic.com →</a></p>
     <div class="key-row">
       <input type="password" id="apikeyInput" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
       <button class="save-key-btn" id="saveKeyBtn" type="button">Save</button>
@@ -830,7 +830,7 @@
       els.apikeySetBtn.textContent = 'Change Key';
     } else {
       els.apikeyBanner.classList.remove('has-key');
-      els.apikeyBanner.querySelector('p').innerHTML = '<strong>No API key set</strong> — reports will use the offline template. <a href="https://console.anthropic.com/keys" target="_blank" rel="noopener">Get a key →</a>';
+      els.apikeyBanner.querySelector('p').innerHTML = '<strong>No API key set</strong> — reports will use the offline template. <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">Get a key →</a>';
       els.apikeySetBtn.textContent = 'Set API Key';
     }
   }
