@@ -343,37 +343,162 @@
   .dispatch-actions button:hover{ border-color: var(--teal); color: var(--teal-dark); }
   .dispatch-actions button:disabled{ opacity:.4; cursor:default; }
 
-  /* ---------- History strip ---------- */
-  .history{
-    margin-top: 28px;
-    border-top: 1px solid var(--ink);
-    padding-top: 14px;
-  }
-  .history h3{
+  /* ---------- History button ---------- */
+  .history-btn{
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
     font-family:'Special Elite', monospace;
-    font-size: 12px;
-    letter-spacing: 2px;
+    font-size: 13px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: var(--ink-soft);
-    margin: 0 0 10px;
-  }
-  .history-list{
-    display:flex;
+    padding: 11px 18px;
+    border-radius: 30px;
+    cursor: pointer;
+    box-shadow: 0 4px 18px var(--shadow);
+    display: flex;
+    align-items: center;
     gap: 8px;
-    flex-wrap: wrap;
+    z-index: 100;
+    transition: background .15s;
   }
-  .history-chip{
-    background: var(--paper-dark);
-    border: 1px solid var(--rule);
+  .history-btn:hover{ background: var(--teal-dark); }
+  .history-btn .badge{
+    background: var(--stamp);
+    color: #fff;
     font-family:'IBM Plex Mono', monospace;
-    font-size: 11.5px;
-    padding: 7px 11px;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
     border-radius: 20px;
-    cursor:pointer;
-    color: var(--ink-soft);
+    min-width: 18px;
+    text-align: center;
+    display: none;
   }
-  .history-chip:hover{ border-color: var(--teal); color: var(--teal-dark); }
-  .history-empty{ font-size: 12px; color: var(--ink-faint); }
+  .history-btn .badge.show{ display: inline-block; }
+
+  /* ---------- History drawer ---------- */
+  .history-overlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(33,25,10,0.45);
+    z-index: 200;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s;
+  }
+  .history-overlay.open{
+    opacity: 1;
+    pointer-events: all;
+  }
+  .history-drawer{
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: min(420px, 95vw);
+    background: var(--card);
+    border-left: 2px solid var(--ink);
+    box-shadow: -8px 0 40px var(--shadow);
+    z-index: 201;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+  }
+  .history-drawer.open{ transform: translateX(0); }
+
+  .drawer-head{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 2px solid var(--ink);
+    flex-shrink: 0;
+  }
+  .drawer-head h2{
+    font-family:'Special Elite', monospace;
+    font-size: 18px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin: 0;
+  }
+  .drawer-head .close-btn{
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: var(--ink-soft);
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+  .drawer-head .close-btn:hover{ color: var(--stamp); }
+
+  .drawer-body{
+    overflow-y: auto;
+    flex: 1;
+    padding: 14px 0;
+  }
+
+  .history-entry{
+    border-bottom: 1px dotted var(--rule);
+    padding: 14px 20px;
+    cursor: pointer;
+    transition: background .1s;
+    position: relative;
+  }
+  .history-entry:hover{ background: var(--paper); }
+  .history-entry:last-child{ border-bottom: none; }
+
+  .history-entry .he-date{
+    font-family:'Special Elite', monospace;
+    font-size: 13.5px;
+    letter-spacing: 1px;
+    color: var(--ink);
+    margin-bottom: 3px;
+  }
+  .history-entry .he-meta{
+    font-size: 10.5px;
+    color: var(--ink-faint);
+    letter-spacing: .5px;
+    margin-bottom: 6px;
+  }
+  .history-entry .he-preview{
+    font-family:'Source Serif 4', serif;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .history-entry .he-del{
+    position: absolute;
+    top: 12px; right: 14px;
+    background: none;
+    border: none;
+    font-size: 13px;
+    color: var(--ink-faint);
+    cursor: pointer;
+    padding: 3px 5px;
+    border-radius: 2px;
+    opacity: 0;
+    transition: opacity .1s;
+  }
+  .history-entry:hover .he-del{ opacity: 1; }
+  .history-entry .he-del:hover{ color: var(--stamp); background: rgba(163,59,43,.08); }
+
+  .drawer-empty{
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--ink-faint);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .drawer-empty strong{ display:block; font-family:'Special Elite', monospace; font-size:15px; margin-bottom:6px; color:var(--ink-soft); }
 
   @media (prefers-reduced-motion: reduce){
     .stamp-wrap, .generate-btn, .dots span{ transition:none !important; animation:none !important; }
@@ -476,18 +601,30 @@
 
   </div>
 
-  <div class="history">
-    <h3>Filed dispatches</h3>
-    <div class="history-list" id="historyList">
-      <span class="history-empty">Nothing filed yet — your past reports will collect here.</span>
-    </div>
-  </div>
 
 </div>
 
+<!-- History floating button -->
+<button class="history-btn" id="historyBtn" type="button" aria-label="Open filed dispatches">
+  📋 History
+  <span class="badge" id="historyBadge"></span>
+</button>
+
+<!-- History drawer -->
+<div class="history-overlay" id="historyOverlay" role="dialog" aria-modal="true" aria-label="Filed dispatches"></div>
+<aside class="history-drawer" id="historyDrawer">
+  <div class="drawer-head">
+    <h2>Filed Dispatches</h2>
+    <button class="close-btn" id="drawerClose" type="button" aria-label="Close history">×</button>
+  </div>
+  <div class="drawer-body" id="drawerBody">
+    <div class="drawer-empty"><strong>No dispatches yet</strong>File your first report and it will appear here.</div>
+  </div>
+</aside>
+
 <script>
 (function(){
-  const STORAGE_PREFIX = 'entry:';
+  const LS_PREFIX = 'dispatch:';
 
   // ---------- utilities ----------
   function todayISO(){
@@ -511,34 +648,135 @@
     return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
 
+  // ---------- localStorage helpers ----------
+  function lsSave(dateISO, entry){
+    try{ localStorage.setItem(LS_PREFIX + dateISO, JSON.stringify(entry)); }
+    catch(e){ console.error('localStorage save failed', e); }
+  }
+  function lsLoad(dateISO){
+    try{ const raw = localStorage.getItem(LS_PREFIX + dateISO); return raw ? JSON.parse(raw) : null; }
+    catch(e){ return null; }
+  }
+  function lsDelete(dateISO){
+    try{ localStorage.removeItem(LS_PREFIX + dateISO); }catch(e){}
+  }
+  function lsAllKeys(){
+    const keys = [];
+    for(let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith(LS_PREFIX)) keys.push(k.replace(LS_PREFIX,''));
+    }
+    return keys.sort().reverse();
+  }
+
   // ---------- state ----------
   let tasks = [ {text:''}, {text:''} ];
   let currentReport = '';
-  let entryCounter = 1;
 
   const els = {
-    dateInput: document.getElementById('dateInput'),
-    toneSelect: document.getElementById('toneSelect'),
-    recipientInput: document.getElementById('recipientInput'),
-    ledgerList: document.getElementById('ledgerList'),
-    addRow: document.getElementById('addRow'),
-    generateBtn: document.getElementById('generateBtn'),
+    dateInput:       document.getElementById('dateInput'),
+    toneSelect:      document.getElementById('toneSelect'),
+    recipientInput:  document.getElementById('recipientInput'),
+    ledgerList:      document.getElementById('ledgerList'),
+    addRow:          document.getElementById('addRow'),
+    generateBtn:     document.getElementById('generateBtn'),
     dispatchContent: document.getElementById('dispatchContent'),
     dispatchActions: document.getElementById('dispatchActions'),
-    statusTag: document.getElementById('statusTag'),
-    wordTag: document.getElementById('wordTag'),
-    stampWrap: document.getElementById('stampWrap'),
-    stampDate: document.getElementById('stampDate'),
-    copyBtn: document.getElementById('copyBtn'),
-    downloadBtn: document.getElementById('downloadBtn'),
-    editBtn: document.getElementById('editBtn'),
-    historyList: document.getElementById('historyList'),
-    entryNo: document.getElementById('entryNo')
+    statusTag:       document.getElementById('statusTag'),
+    wordTag:         document.getElementById('wordTag'),
+    stampWrap:       document.getElementById('stampWrap'),
+    stampDate:       document.getElementById('stampDate'),
+    copyBtn:         document.getElementById('copyBtn'),
+    downloadBtn:     document.getElementById('downloadBtn'),
+    editBtn:         document.getElementById('editBtn'),
+    entryNo:         document.getElementById('entryNo'),
+    historyBtn:      document.getElementById('historyBtn'),
+    historyBadge:    document.getElementById('historyBadge'),
+    historyOverlay:  document.getElementById('historyOverlay'),
+    historyDrawer:   document.getElementById('historyDrawer'),
+    drawerClose:     document.getElementById('drawerClose'),
+    drawerBody:      document.getElementById('drawerBody'),
   };
 
   els.dateInput.value = todayISO();
 
-  // ---------- ledger rendering ----------
+  // ---------- drawer open/close ----------
+  function openDrawer(){
+    renderDrawer();
+    els.historyOverlay.classList.add('open');
+    els.historyDrawer.classList.add('open');
+    els.drawerClose.focus();
+  }
+  function closeDrawer(){
+    els.historyOverlay.classList.remove('open');
+    els.historyDrawer.classList.remove('open');
+    els.historyBtn.focus();
+  }
+  els.historyBtn.addEventListener('click', openDrawer);
+  els.drawerClose.addEventListener('click', closeDrawer);
+  els.historyOverlay.addEventListener('click', closeDrawer);
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrawer(); });
+
+  // ---------- drawer rendering ----------
+  function renderDrawer(){
+    const keys = lsAllKeys();
+    const count = keys.length;
+    els.historyBadge.textContent = count;
+    els.historyBadge.classList.toggle('show', count > 0);
+    els.entryNo.textContent = String(count + 1).padStart(3,'0');
+    if(count === 0){
+      els.drawerBody.innerHTML = `<div class="drawer-empty"><strong>No dispatches yet</strong>File your first report and it will appear here.</div>`;
+      return;
+    }
+    els.drawerBody.innerHTML = '';
+    keys.forEach(dateKey => {
+      const entry = lsLoad(dateKey);
+      if(!entry) return;
+      const div = document.createElement('div');
+      div.className = 'history-entry';
+      div.setAttribute('role','button');
+      div.setAttribute('tabindex','0');
+      div.setAttribute('aria-label', `Load report for ${formatDateHuman(dateKey)}`);
+      const label = dateKey === todayISO() ? `${dateKey} · Today` : formatDateHuman(dateKey);
+      const taskCount = (entry.tasks||[]).length;
+      const toneLabel = entry.tone ? entry.tone.charAt(0).toUpperCase()+entry.tone.slice(1) : '';
+      const recipientLabel = entry.recipient ? ` · for ${entry.recipient}` : '';
+      const preview = (entry.report||'').replace(/\n+/g,' ').trim();
+      div.innerHTML = `
+        <div class="he-date">${escapeHtml(label)}</div>
+        <div class="he-meta">${taskCount} task${taskCount!==1?'s':''} · ${toneLabel}${escapeHtml(recipientLabel)}</div>
+        <div class="he-preview">${escapeHtml(preview)}</div>
+        <button class="he-del" type="button" title="Delete this entry" aria-label="Delete report for ${escapeHtml(formatDateHuman(dateKey))}">🗑</button>
+      `;
+      div.addEventListener('click', e => {
+        if(e.target.classList.contains('he-del')) return;
+        loadEntryIntoUI(entry); closeDrawer();
+      });
+      div.addEventListener('keydown', e => {
+        if(e.key==='Enter'||e.key===' '){ loadEntryIntoUI(entry); closeDrawer(); }
+      });
+      div.querySelector('.he-del').addEventListener('click', e => {
+        e.stopPropagation();
+        if(confirm(`Delete the report for ${formatDateHuman(dateKey)}?`)){
+          lsDelete(dateKey); renderDrawer();
+        }
+      });
+      els.drawerBody.appendChild(div);
+    });
+  }
+
+  function loadEntryIntoUI(entry){
+    els.dateInput.value = entry.date;
+    els.toneSelect.value = entry.tone || 'formal';
+    els.recipientInput.value = entry.recipient || '';
+    tasks = (entry.tasks||[]).map(t=>({text:t}));
+    if(tasks.length===0) tasks=[{text:''},{text:''}];
+    renderLedger(); updateWordTag();
+    currentReport = entry.report||'';
+    typeOutReport(currentReport); fireStamp();
+    els.statusTag.textContent = 'filed';
+    els.dispatchActions.style.display = 'flex';
+  }
   function autoGrow(el){
     el.style.height = 'auto';
     el.style.height = el.scrollHeight + 'px';
@@ -752,13 +990,8 @@ Write only the finished paragraph. No preamble, no quotation marks, no markdown 
     els.dispatchActions.style.display = 'flex';
     els.generateBtn.disabled = false;
 
-    await saveEntry(dateISO, {
-      date: dateISO,
-      tasks: taskTexts,
-      tone, recipient,
-      report: reportText
-    });
-    await refreshHistory();
+    lsSave(dateISO, { date: dateISO, tasks: taskTexts, tone, recipient, report: reportText });
+    renderDrawer();
   }
 
   els.generateBtn.addEventListener('click', handleGenerate);
@@ -790,66 +1023,8 @@ Write only the finished paragraph. No preamble, no quotation marks, no markdown 
     document.querySelector('.ledger-list textarea')?.focus();
   });
 
-  // ---------- persistence ----------
-  async function saveEntry(dateISO, entry){
-    try{
-      await window.storage.set(STORAGE_PREFIX + dateISO, JSON.stringify(entry), false);
-    }catch(e){
-      console.error('Could not save entry', e);
-    }
-  }
-
-  async function loadEntry(dateISO){
-    try{
-      const res = await window.storage.get(STORAGE_PREFIX + dateISO, false);
-      if(!res) return null;
-      return JSON.parse(res.value);
-    }catch(e){
-      return null;
-    }
-  }
-
-  async function refreshHistory(){
-    try{
-      const res = await window.storage.list(STORAGE_PREFIX, false);
-      const keys = (res && res.keys) ? res.keys : [];
-      entryCounter = keys.length + 1;
-      els.entryNo.textContent = String(Math.max(1, entryCounter)).padStart(3,'0');
-
-      if(keys.length === 0){
-        els.historyList.innerHTML = `<span class="history-empty">Nothing filed yet — your past reports will collect here.</span>`;
-        return;
-      }
-      const dates = keys.map(k => k.replace(STORAGE_PREFIX, '')).sort().reverse().slice(0, 14);
-      els.historyList.innerHTML = '';
-      dates.forEach(d => {
-        const chip = document.createElement('button');
-        chip.className = 'history-chip';
-        chip.type = 'button';
-        chip.textContent = d === todayISO() ? `${d} (today)` : d;
-        chip.addEventListener('click', async ()=>{
-          const entry = await loadEntry(d);
-          if(!entry) return;
-          els.dateInput.value = entry.date;
-          els.toneSelect.value = entry.tone || 'formal';
-          els.recipientInput.value = entry.recipient || '';
-          tasks = entry.tasks.map(t => ({text:t}));
-          renderLedger();
-          updateWordTag();
-          currentReport = entry.report;
-          typeOutReport(entry.report);
-          fireStamp();
-          els.statusTag.textContent = 'filed';
-          els.dispatchActions.style.display = 'flex';
-        });
-        els.historyList.appendChild(chip);
-      });
-    }catch(e){
-      els.historyList.innerHTML = `<span class="history-empty">History unavailable right now.</span>`;
-    }
-  }
-
-  refreshHistory();
+  // ---------- init ----------
+  renderDrawer();
 })();
 </script>
 
