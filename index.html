@@ -500,6 +500,97 @@
   }
   .drawer-empty strong{ display:block; font-family:'Special Elite', monospace; font-size:15px; margin-bottom:6px; color:var(--ink-soft); }
 
+  /* ---------- API key banner ---------- */
+  .apikey-banner{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(163,59,43,.08);
+    border: 1px solid rgba(163,59,43,.3);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .apikey-banner p{
+    margin: 0;
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    flex: 1;
+    min-width: 160px;
+  }
+  .apikey-banner p strong{ color: var(--stamp); }
+  .apikey-set-btn{
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .5px;
+    padding: 7px 13px;
+    border-radius: 2px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .apikey-set-btn:hover{ background: var(--teal-dark); }
+  .apikey-banner.has-key{ background: rgba(46,94,90,.07); border-color: rgba(46,94,90,.3); }
+  .apikey-banner.has-key p strong{ color: var(--teal-dark); }
+
+  /* ---------- API key modal ---------- */
+  .modal-overlay{
+    position: fixed; inset: 0;
+    background: rgba(33,25,10,.5);
+    z-index: 300;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s;
+  }
+  .modal-overlay.open{ opacity: 1; pointer-events: all; }
+  .modal{
+    background: var(--card);
+    border: 2px solid var(--ink);
+    border-radius: var(--radius);
+    padding: 28px 26px 22px;
+    width: min(440px, 92vw);
+    box-shadow: 0 12px 40px var(--shadow);
+    position: relative;
+  }
+  .modal h3{
+    font-family: 'Special Elite', monospace;
+    font-size: 17px; letter-spacing: 1.5px;
+    text-transform: uppercase; margin: 0 0 6px;
+  }
+  .modal p{ font-size: 12px; color: var(--ink-soft); margin: 0 0 16px; line-height: 1.7; }
+  .modal p a{ color: var(--teal-dark); }
+  .modal .key-row{ display: flex; gap: 8px; }
+  .modal .key-row input{
+    flex: 1;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px; color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--rule); border-radius: 2px;
+    padding: 9px 10px;
+  }
+  .modal .save-key-btn{
+    background: var(--ink); color: var(--paper); border: none;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px;
+    padding: 9px 16px; border-radius: 2px; cursor: pointer;
+  }
+  .modal .save-key-btn:hover{ background: var(--teal-dark); }
+  .modal .modal-close{
+    position: absolute; top: 10px; right: 12px;
+    background: none; border: none; font-size: 20px;
+    cursor: pointer; color: var(--ink-soft); padding: 2px 6px;
+  }
+  .modal .modal-close:hover{ color: var(--stamp); }
+  .modal .clear-key-btn{
+    margin-top: 10px; background: none;
+    border: none; font-size: 11px; color: var(--ink-faint);
+    cursor: pointer; padding: 0; text-decoration: underline;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .modal .clear-key-btn:hover{ color: var(--stamp); }
+
   @media (prefers-reduced-motion: reduce){
     .stamp-wrap, .generate-btn, .dots span{ transition:none !important; animation:none !important; }
     .cursor{ animation:none !important; opacity:0; }
@@ -527,6 +618,11 @@
         <span class="tag" id="wordTag">draft</span>
       </div>
       <div class="card-body">
+
+        <div class="apikey-banner" id="apikeyBanner">
+          <p><strong>No API key set</strong> — reports will use the offline template. <a href="https://console.anthropic.com/keys" target="_blank" rel="noopener">Get a key →</a></p>
+          <button class="apikey-set-btn" id="apikeySetBtn" type="button">Set API Key</button>
+        </div>
 
         <div class="row-2">
           <div class="field">
@@ -602,6 +698,21 @@
   </div>
 
 
+</div>
+
+<!-- API Key modal -->
+<div class="modal-overlay" id="apikeyOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <button class="modal-close" id="apikeyModalClose" type="button" aria-label="Close">×</button>
+    <h3 id="modalTitle">Anthropic API Key</h3>
+    <p>Paste your key below. It's stored only in your browser's localStorage — never sent anywhere except directly to Anthropic.<br>
+    <a href="https://console.anthropic.com/keys" target="_blank" rel="noopener">Get a key at console.anthropic.com →</a></p>
+    <div class="key-row">
+      <input type="password" id="apikeyInput" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
+      <button class="save-key-btn" id="saveKeyBtn" type="button">Save</button>
+    </div>
+    <button class="clear-key-btn" id="clearKeyBtn" type="button">Clear saved key</button>
+  </div>
 </div>
 
 <!-- History floating button -->
@@ -696,7 +807,53 @@
     historyDrawer:   document.getElementById('historyDrawer'),
     drawerClose:     document.getElementById('drawerClose'),
     drawerBody:      document.getElementById('drawerBody'),
+    apikeyBanner:    document.getElementById('apikeyBanner'),
+    apikeySetBtn:    document.getElementById('apikeySetBtn'),
+    apikeyOverlay:   document.getElementById('apikeyOverlay'),
+    apikeyModalClose:document.getElementById('apikeyModalClose'),
+    apikeyInput:     document.getElementById('apikeyInput'),
+    saveKeyBtn:      document.getElementById('saveKeyBtn'),
+    clearKeyBtn:     document.getElementById('clearKeyBtn'),
   };
+
+  // ---------- API key management ----------
+  const API_KEY_LS = 'dispatch:apikey';
+  function getApiKey(){ return localStorage.getItem(API_KEY_LS) || ''; }
+  function setApiKey(k){ localStorage.setItem(API_KEY_LS, k); }
+  function clearApiKey(){ localStorage.removeItem(API_KEY_LS); }
+
+  function updateBanner(){
+    const k = getApiKey();
+    if(k){
+      els.apikeyBanner.classList.add('has-key');
+      els.apikeyBanner.querySelector('p').innerHTML = '<strong>AI key active</strong> — reports will be AI-generated.';
+      els.apikeySetBtn.textContent = 'Change Key';
+    } else {
+      els.apikeyBanner.classList.remove('has-key');
+      els.apikeyBanner.querySelector('p').innerHTML = '<strong>No API key set</strong> — reports will use the offline template. <a href="https://console.anthropic.com/keys" target="_blank" rel="noopener">Get a key →</a>';
+      els.apikeySetBtn.textContent = 'Set API Key';
+    }
+  }
+
+  function openKeyModal(){
+    els.apikeyInput.value = getApiKey();
+    els.apikeyOverlay.classList.add('open');
+    els.apikeyInput.focus();
+  }
+  function closeKeyModal(){ els.apikeyOverlay.classList.remove('open'); }
+
+  els.apikeySetBtn.addEventListener('click', openKeyModal);
+  els.apikeyModalClose.addEventListener('click', closeKeyModal);
+  els.apikeyOverlay.addEventListener('click', e => { if(e.target === els.apikeyOverlay) closeKeyModal(); });
+  els.saveKeyBtn.addEventListener('click', ()=>{
+    const val = els.apikeyInput.value.trim();
+    if(val){ setApiKey(val); updateBanner(); closeKeyModal(); }
+    else { alert('Please paste a valid API key.'); }
+  });
+  els.apikeyInput.addEventListener('keydown', e => { if(e.key==='Enter') els.saveKeyBtn.click(); });
+  els.clearKeyBtn.addEventListener('click', ()=>{ clearApiKey(); updateBanner(); els.apikeyInput.value=''; closeKeyModal(); });
+
+  updateBanner();
 
   els.dateInput.value = todayISO();
 
@@ -863,6 +1020,9 @@
 
   // ---------- AI generation via Anthropic API ----------
   async function generateWithAI(taskTexts, tone, dateHuman, recipient){
+    const apiKey = getApiKey();
+    if(!apiKey) throw new Error('No API key');
+
     const toneInstruction = {
       formal: "Use a formal, professional register suitable for a corporate status report.",
       concise: "Keep it tight and businesslike — short sentences, no filler, 2-4 sentences total.",
@@ -891,7 +1051,12 @@ Write only the finished paragraph. No preamble, no quotation marks, no markdown 
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
         max_tokens: 1000,
