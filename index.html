@@ -174,7 +174,7 @@
     display:grid;
     grid-template-columns: 26px 1fr 28px;
     gap: 8px;
-    align-items:center;
+    align-items:start;
     padding: 9px 0;
     border-bottom: 1px dotted var(--rule);
   }
@@ -183,23 +183,28 @@
     font-size: 13px;
     color: var(--ink-faint);
     text-align:right;
+    padding-top: 7px;
   }
-  .task-row input{
+  .task-row textarea{
     width:100%;
     font-family:'IBM Plex Mono', monospace;
     font-size: 13px;
+    line-height: 1.5;
     background: transparent;
     border: none;
     border-bottom: 1px solid transparent;
     padding: 6px 2px;
     color: var(--ink);
+    resize: none;
+    overflow: hidden;
+    min-height: 32px;
   }
-  .task-row input:hover{ border-bottom-color: var(--rule); }
-  .task-row input:focus-visible{
+  .task-row textarea:hover{ border-bottom-color: var(--rule); }
+  .task-row textarea:focus-visible{
     outline:none;
     border-bottom: 1px solid var(--teal);
   }
-  .task-row input::placeholder{ color: var(--ink-faint); }
+  .task-row textarea::placeholder{ color: var(--ink-faint); }
   .task-row .remove{
     background:none;
     border:none;
@@ -207,7 +212,7 @@
     font-size: 16px;
     cursor:pointer;
     line-height:1;
-    padding: 4px;
+    padding: 6px 4px;
   }
   .task-row .remove:hover{ color: var(--stamp); }
 
@@ -534,6 +539,11 @@
   els.dateInput.value = todayISO();
 
   // ---------- ledger rendering ----------
+  function autoGrow(el){
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
   function renderLedger(){
     els.ledgerList.innerHTML = '';
     tasks.forEach((t, i) => {
@@ -541,14 +551,16 @@
       row.className = 'task-row';
       row.innerHTML = `
         <span class="num">${String(i+1).padStart(2,'0')}</span>
-        <input type="text" data-idx="${i}" placeholder="What did you get done? e.g. Reviewed Q3 budget draft" value="${escapeHtml(t.text)}">
+        <textarea data-idx="${i}" rows="1" placeholder="What did you get done? e.g. Reviewed Q3 budget draft">${escapeHtml(t.text)}</textarea>
         <button class="remove" type="button" data-idx="${i}" aria-label="Remove line ${i+1}" ${tasks.length<=1?'disabled style="opacity:.25;cursor:default;"':''}>&times;</button>
       `;
       els.ledgerList.appendChild(row);
     });
-    els.ledgerList.querySelectorAll('input').forEach(inp=>{
+    els.ledgerList.querySelectorAll('textarea').forEach(inp=>{
+      autoGrow(inp);
       inp.addEventListener('input', e=>{
         tasks[+e.target.dataset.idx].text = e.target.value;
+        autoGrow(e.target);
         updateWordTag();
       });
     });
@@ -572,7 +584,7 @@
   els.addRow.addEventListener('click', ()=>{
     tasks.push({text:''});
     renderLedger();
-    const inputs = els.ledgerList.querySelectorAll('input');
+    const inputs = els.ledgerList.querySelectorAll('textarea');
     inputs[inputs.length-1].focus();
   });
 
@@ -582,8 +594,8 @@
   function buildFallbackParagraph(taskTexts, tone, dateHuman, recipient){
     const openers = {
       formal: `On ${dateHuman}, the following progress was made`,
-      concise: `${dateHuman} — progress summary`,
-      casual: `Here's what I got done on ${dateHuman}`
+      concise: `On ${dateHuman}, the following progress was made`,
+      casual: `On ${dateHuman}, here's what I got done`
     };
     const connectors = ["First,", "In addition,", "I also", "Following that,", "Alongside this,", "Separately,", "Finally,"];
     let sentences = [];
@@ -619,16 +631,25 @@
       casual: "Use a relaxed, first-person, conversational register, like a quick update to a teammate."
     }[tone];
 
-    const prompt = `Turn the following list of completed tasks into a single well-written progress report paragraph (not a list, not bullet points, no headers or markdown — plain prose only).
+    const prompt = `You are writing a daily progress report for a trainee. Turn the raw, rough task notes below into a single well-written, flowing narrative paragraph (not a list, not bullet points, no headers or markdown — plain prose only).
 
 Date: ${dateHuman}
 ${recipient ? 'Audience: ' + recipient : ''}
 Style: ${toneInstruction}
 
-Tasks accomplished:
+Raw task notes (these are rough, informal, possibly misspelled or shorthand — rewrite and expand them properly, don't just copy them):
 ${taskTexts.map(t => '- ' + t).join('\n')}
 
-Do not include any greeting or self-introduction — the report already opens with a fixed greeting line, so start directly with the summary of the day's work. Write only the finished paragraph. No preamble, no quotation marks, no markdown formatting.`;
+How to write it:
+- Open with: "On ${dateHuman}, the following progress was made:" then continue in flowing prose.
+- Rewrite each raw note into a complete, polished sentence — fix grammar/spelling, expand abbreviations naturally, and write out names, titles, codes, and numbers cleanly (e.g. "Sir Verzosa", "DS#2, DS#3, DS#7", "MR#9, MR#10, MR#11").
+- Chain the tasks together in the order given using natural transitions such as "The day began with...", "During the ceremony...", "X then spoke about...", "Afterward, I observed...", "This was followed by...", "The rest of the day involved...", "I was also assigned to...".
+- Combine closely related raw notes into one smooth sentence where it reads better than listing them separately, rather than giving every note its own sentence.
+- Do not invent facts, names, or outcomes that aren't implied by the notes — only rephrase and connect what's given.
+- Close with a short wrap-up sentence in a similar spirit to: "Overall, the day's objectives were met, and the work is on track to continue tomorrow."
+- Do not include any greeting or self-introduction — the report already opens with a fixed greeting line elsewhere, so start directly with "On ${dateHuman}, the following progress was made:".
+
+Write only the finished paragraph. No preamble, no quotation marks, no markdown formatting.`;
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -766,7 +787,7 @@ Do not include any greeting or self-introduction — the report already opens wi
   });
 
   els.editBtn.addEventListener('click', ()=>{
-    document.querySelector('.ledger-list input')?.focus();
+    document.querySelector('.ledger-list textarea')?.focus();
   });
 
   // ---------- persistence ----------
